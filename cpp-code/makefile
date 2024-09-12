@@ -1,17 +1,31 @@
-CC = g++
-CFLAGS = -Wall -Wextra -std=c++11
+CC = h5c++ -I$(RAPTOR)/src -I$(RAPTOR)/src/mlody -I$(PWD)
+CFLAGS = -fopenmp  -O2 -lm -lgsl -Wall -Wno-unused-but-set-variable -Wno-narrowing
+LDFLAGS = -fopenmp -lm -lgsl
 
-SRCS = $(wildcard *.cpp)
-OBJS = $(SRCS:.cpp=.o)
-TARGET = mlody
+VPATH=layers:
+CPATH=layers:
 
-all: $(TARGET)
+OBJDIR=build
 
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $^ -o $@
+TARGET=MLody
 
-%.o: %.cpp
-	$(CC) $(CFLAGS) -c $< -o $@
+SOURCESRT=main.c baseLayer.c tensor.c model-ml.c utils-ml.c mlody.c
+SOURCES=$(SOURCESRT) activation.c batchNormalization.c conv1d.c conv2d.c dense.c elu.c embedding.c flatten.c locally1d.c locally2d.c lstm.c maxPooling2d.c
+OBJECTS := $(patsubst %.c,$(OBJDIR)/%.o,$(SOURCES))
+
+all: create_directories $(SOURCES) $(TARGET)
+
+$(TARGET): $(OBJECTS)
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+
+create_directories:
+	@test -d $(OBJDIR) || mkdir -v $(OBJDIR)
+
+
+$(OBJECTS): $(OBJDIR)/%.o: %.c
+	$(CC) $(CFLAGS)  -c $^ -o $@
+
 
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -rf $(OBJECTS) $(TARGET)
+
